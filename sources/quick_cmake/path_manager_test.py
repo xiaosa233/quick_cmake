@@ -9,7 +9,7 @@ class TestPathManager(unittest.TestCase):
         workspace = path.join(path.dirname(__file__), 'test')
         pmg = PathManager(workspace)
 
-        expected_modules = ['A', 'B', 'C', 'D']
+        expected_modules = ['A', 'B', 'C', 'D', 'only_Linux_Debug', 'only_Release_X64']
         expected_modules_result = {}
         for m in expected_modules:
             expected_modules_result[m] = path.join(workspace, 'sources', m, 'build.py')

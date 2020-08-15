@@ -6,7 +6,7 @@ class A:
 
         if config.configuration == config.Configuration.RELEASE and \
             config.platform == config.Platform.X64:
-            self.third_parties.append('only_Release_X64')
+            self.dependencies.append('only_Release_X64')
         if config.configuration == config.Configuration.DEBUG and \
             config.system == config.System.LINUX:
-            self.third_parties.append('only_Linux_Debug')
+            self.dependencies.append('only_Linux_Debug')

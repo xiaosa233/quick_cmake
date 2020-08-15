@@ -1,8 +1,8 @@
 
-from os import path
-import os
-
 import glog
+import os
+from os import path
+
 
 class PathManager:
     def __init__(self, workspace):
@@ -15,6 +15,12 @@ class PathManager:
 
     def third_parties_dir(self):
         return path.join(self._workspace, 'third_parties')
+
+    def project_name(self):
+        return path.basename(self._workspace)
+    
+    def project_files_dir(self):
+        return path.join(self._workspace, 'project_files')
 
     @property
     def module_map(self):

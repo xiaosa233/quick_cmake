@@ -4,6 +4,8 @@ from os import path
 import os
 import sys
 
+import utils
+
 class ModuleNode:
     ''' Module Node , internal usage in BuildModel
     Attibutes:
@@ -14,10 +16,11 @@ class ModuleNode:
     def __init__(self):
         self.module_name = ''
         self.childs = {}
-        self.is_cached = False
         self.output = None
         self.dependencies = set()
         self.third_parties = set()
+        self.pre_build = None
+        self.post_build = None
 
 class ThirdPartyInfo:
     def __init__(self):
@@ -31,11 +34,10 @@ class ThirdPartyInfo:
 class BuildModel:
     def __init__(self, configs):
         self._configs = configs
-
         # _modules is an array, length is equal to config, value is a map {name --> ModuleNode}
-        self._modules = [{}] * len(configs)
+        self._modules = [ {} for c in configs ]
         # _third_parties is an array, length is equal to config, value is a map {name --> ThirdPartyInfo}
-        self._third_parties = [{}] * len(configs)
+        self._third_parties = [ {} for c in configs ]
 
     def modules(self):
         return self._modules
@@ -94,6 +96,10 @@ class BuildModel:
                 glog.info('Add default third party %s', party)
                 self._third_parties[i][party] = info
 
+    def parse(self):
+        for i in range(len(self._configs)):
+            self._parse(self._modules[i])
+
     def _module_object_to_module_node(self, build_object):
         module_node = ModuleNode()
         module_node.module_name = build_object.__class__.__name__
@@ -102,6 +108,8 @@ class BuildModel:
             module_node.dependencies.add(d)
         for third_party in getattr(build_object, 'third_parties', []):
             module_node.third_parties.add(third_party)
+        module_node.pre_build = getattr(build_object, 'pre_build', None)
+        module_node.post_build = getattr(build_object, 'post_build', None)
         module_node.childs = module_node.dependencies
         return module_node
 
@@ -138,3 +146,44 @@ class BuildModel:
     def _get_attri_or_none(self, object, name):
         ''' Get attribute of an object, or return None if it is not exists'''
         return getattr(object, name)
+
+    def _parse(self, modules):
+        for m in self._post_order_traversal(modules):
+            cur_module = modules[m]
+            append_ds = set()
+            append_ts = set()
+            for child in cur_module.childs:
+                append_ds.update(modules[child].dependencies)
+                append_ts.update(modules[child].third_parties)
+            cur_module.dependencies.update(append_ds)
+            cur_module.third_parties.update(append_ts)
+
+    def _post_order_traversal(self, modules):
+        result = []
+        if not modules:
+            return result
+        # find roots
+        child_set = set()
+        for k in modules:
+            child_set.update(modules[k].childs)
+        
+        for k in modules:
+            if k in child_set:
+                continue
+            stack = []
+            cur_node = k
+            while cur_node or stack :
+                if cur_node and cur_node not in result:
+                    stack.append(cur_node)
+                    cur_node = utils.set_to_sorted_list(modules[cur_node].childs)[0] if modules[cur_node].childs else None
+                else:
+                    cur_node = stack.pop()
+                    #visit
+                    result.append(cur_node)
+                    if not stack:
+                        break
+                    # get neighbors
+                    neighbors = utils.set_to_sorted_list(modules[stack[-1]].childs)
+                    i = neighbors.index(cur_node)
+                    cur_node = neighbors[i+1] if len(neighbors) > i+1 else None
+        return result

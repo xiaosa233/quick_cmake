@@ -2,7 +2,7 @@
 import click
 import glog
 
-from build_importer import BuildImporter
+from build_model import BuildModel
 import config
 from path_manager import PathManager
 
@@ -14,7 +14,7 @@ def _parse_member(value, str):
 
 @click.command()
 @click.option('--configuration', default='DEBUG,RELEASE', help='values can be:DEBUG,RELEASE')
-@click.option('--platform', default='X86,X64', help='values can be:X86,X64,ARM,ARM64')
+@click.option('--platform', default='WIN32', help='values can one of:WIN32,X64,ARM,ARM64')
 @click.option('--workspace', default='.', help='Workspace dir')
 def main(configuration, platform, workspace):
     v_configurations = configuration.split(',')
@@ -32,6 +32,12 @@ def main(configuration, platform, workspace):
 
     # create path manager instance
     pmg = PathManager(workspace)
+
+    build_model = BuildModel(configs)
+    build_model.import_modules(pmg.module_map)
+    build_model.import_third_parties(pmg.third_party_map)
+    build_model.import_default_third_parties(pmg.default_third_party_map)
+    build_model.parse()
 
 if __name__ == '__main__':
     main()

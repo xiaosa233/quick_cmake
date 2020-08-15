@@ -13,7 +13,7 @@ class System:
 
 class Platform:
     def __init__(self):
-        self.X86 = 1
+        self.WIN32 = 1
         self.X64 = 2
         self.ARM = 3
         self.ARM64 = 4
@@ -33,7 +33,7 @@ class Config:
         self._predeine_values()
         self.configuration = self.Configuration.RELEASE
         self.system = self._get_system()
-        self.platform = self.Platform.X86
+        self.platform = self.Platform.WIN32
 
     def _predeine_values(self):
         self.Configuration = Configuration()
