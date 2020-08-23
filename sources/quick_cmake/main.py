@@ -47,6 +47,9 @@ def main(configuration, platform, workspace, only_generate, pre_build, post_buil
     build_model.parse()
 
     if not pre_build and not post_build:
+        if not build_model.modules()[0]:
+            glog.warn('There is not modules, skip!')
+            return
         cmake_generator = CMakeGenerator(configs, build_model, pmg)
         cmake_generator.generate()
         if not only_generate:

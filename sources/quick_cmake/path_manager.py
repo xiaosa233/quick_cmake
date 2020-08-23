@@ -20,7 +20,7 @@ class PathManager:
         return path.join(self._workspace, 'third_parties')
 
     def project_name(self):
-        return path.basename(self._workspace)
+        return path.basename(path.abspath(self._workspace))
     
     def project_files_dir(self):
         return path.join(self._workspace, 'project_files')

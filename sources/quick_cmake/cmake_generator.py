@@ -248,10 +248,10 @@ class CMakeGenerator:
         # add pre/post build
         custom_cmd = self._convert_custom_command(sys.argv) + ' --module='+module.name
         if module.has_pre_build:
-            pre_build_cmd = 'python {} --pre_build'.format(custom_cmd)
+            pre_build_cmd = '{} --pre_build'.format(custom_cmd)
             content.append('add_custom_command(TARGET {} PRE_BUILD COMMAND {})'.format(module.name, pre_build_cmd))
         if module.has_post_build:
-            post_build_cmd = 'python {} --post_build'.format(custom_cmd)
+            post_build_cmd = '{} --post_build'.format(custom_cmd)
             content.append('add_custom_command(TARGET {} POST_BUILD COMMAND {})'.format(module.name, post_build_cmd))
         
         content.append('set_target_properties({} PROPERTIES LINKER_LANGUAGE CXX)'.format(module.name))
@@ -262,7 +262,10 @@ class CMakeGenerator:
         #replace first custom
         workspace = '--workspace'
         result = []
-        result.append(path.abspath(argv[0]).replace('\\','/'))
+        execute_file = path.abspath(argv[0]).replace('\\','/')
+        if path.splitext(execute_file)[1] == '.py':
+            result.append('python')
+        result.append(execute_file)
         i = 1
         while i < len(argv):
             cur_argv = argv[i]

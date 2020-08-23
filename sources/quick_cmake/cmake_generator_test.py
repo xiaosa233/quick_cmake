@@ -132,14 +132,14 @@ class TestCMakeGenerator(unittest.TestCase):
         workspace = path.abspath(path.dirname(path.dirname(path.dirname(__file__)))).replace('\\','/')+'/'
         test_cmd = cmake_generator_._convert_custom_command(argv)
         test_cmd = test_cmd.replace(workspace, '')
-        expected_cmd = 'sources/quick_cmake/main.py --workspace sources/quick_cmake/test --configuration=DEBUG,RELEASE --module mock_module'
+        expected_cmd = 'python sources/quick_cmake/main.py --workspace sources/quick_cmake/test --configuration=DEBUG,RELEASE --module mock_module'
         self.assertEqual(expected_cmd, test_cmd)
 
         # none workspace case
         argv = ['./sources/quick_cmake/main.py']
         test_cmd = cmake_generator_._convert_custom_command(argv)
         test_cmd = test_cmd.replace(workspace, '')
-        expected_cmd = 'sources/quick_cmake/main.py --workspace sources/quick_cmake/test'
+        expected_cmd = 'python sources/quick_cmake/main.py --workspace sources/quick_cmake/test'
         self.assertEqual(expected_cmd, test_cmd)
 
 

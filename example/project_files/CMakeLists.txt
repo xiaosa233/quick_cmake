@@ -7,7 +7,7 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 set(CMAKE_GENERATOR_PLATFORM "x64" CACHE INTERNAL "" FORCE)
 
 
-project(.)
+project(example)
 set (PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
 set (SOURCE_DIR ${PROJECT_DIR}/sources)
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_DIR}/lib)
@@ -63,7 +63,7 @@ target_include_directories(test_bin PUBLIC ${PROJECT_DIR}/third_parties/default_
 target_link_libraries(test_bin general configuration_lib)
 target_link_libraries(test_bin debug only_debug)
 target_link_libraries(test_bin optimized only_release ${PROJECT_DIR}/third_parties/default_party/lib/default_party.lib)
-add_custom_command(TARGET test_bin PRE_BUILD COMMAND python E:/Work/quick_cmakeV2/quick_cmake/sources/quick_cmake/main.py --workspace E:/Work/quick_cmakeV2/quick_cmake/example --module=test_bin --pre_build)
-add_custom_command(TARGET test_bin POST_BUILD COMMAND python E:/Work/quick_cmakeV2/quick_cmake/sources/quick_cmake/main.py --workspace E:/Work/quick_cmakeV2/quick_cmake/example --module=test_bin --post_build)
+add_custom_command(TARGET test_bin PRE_BUILD COMMAND E:/Work/quick_cmakeV2/quick_cmake/example/quick_cmake_1.0.exe --workspace E:/Work/quick_cmakeV2/quick_cmake/example --module=test_bin --pre_build)
+add_custom_command(TARGET test_bin POST_BUILD COMMAND E:/Work/quick_cmakeV2/quick_cmake/example/quick_cmake_1.0.exe --workspace E:/Work/quick_cmakeV2/quick_cmake/example --module=test_bin --post_build)
 set_target_properties(test_bin PROPERTIES LINKER_LANGUAGE CXX)
 
