@@ -10,3 +10,6 @@ class A:
         if config.configuration == config.Configuration.DEBUG and \
             config.system == config.System.LINUX:
             self.dependencies.append('only_Linux_Debug')
+
+    def pre_build(self):
+        pass

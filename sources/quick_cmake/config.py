@@ -24,16 +24,13 @@ class Output:
         self.STATIC_LIB = 2
         self.DYNAMIC_LIB = 3
 
-
 class Config:
     def __init__(self):
-        '''
-            
-        '''
         self._predeine_values()
         self.configuration = self.Configuration.RELEASE
         self.system = self._get_system()
-        self.platform = self.Platform.WIN32
+        # TODO(xiaojianli): Change default value of platform relative to the sytem
+        self.platform = self.Platform.X64
 
     def _predeine_values(self):
         self.Configuration = Configuration()
@@ -48,4 +45,3 @@ class Config:
             return self.System.LINUX
         else:
             glog.warn('Can not identify the system :' + platform.system())
-

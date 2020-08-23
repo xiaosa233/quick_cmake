@@ -1,4 +1,6 @@
 
+import copy
+import glob
 import os
 from os import path
 
@@ -12,11 +14,11 @@ def strings_combine(container, combiner):
         e.g. ['yes','no'], ';', will output 'yes;no'
     '''
     result = ''
-    for value in container:
-        if value != container[-1]:
-            result += value + combiner
+    for i in range(len(container)):
+        if i + 1 != len(container):
+            result += container[i] + combiner
         else:
-            result += value
+            result += container[i]
     return result
 
 def write_text(content, file_path):
@@ -29,3 +31,37 @@ def write_text(content, file_path):
     with open(file_path, 'w') as f:
         f.write(content)
   
+def match_files(workspace, dirs, files, relative_dir = ''):
+    ''' mathc files that give by files under the dirs 
+    Args:
+        workspace: workspace about the dirs. will combine the value in the dirs if it is not a 
+            absolute path
+        relative_dir: return the result relative path to the relative dir
+    Return:
+        set : return path with files relative to the relative dir
+    '''
+    result = set()
+    for dir in dirs:
+        check_dir = dir
+        if not path.isabs(check_dir):
+            check_dir = path.join(workspace, dir)
+        
+        for file in files:
+            file_list = glob.glob(path.join(check_dir, file))
+            if relative_dir:
+                file_list = [ path.relpath(f, relative_dir) for f in file_list ]
+            result.update(set(file_list))
+    return result
+
+def split_path(path_value):
+    result = []
+    p = path_value
+    while p :
+        base_name = path.basename(p)
+        if not base_name:
+            result.append(p)
+            break
+        result.append(base_name)
+        p = path.dirname(p)
+    result.reverse()
+    return result

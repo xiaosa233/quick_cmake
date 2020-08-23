@@ -9,7 +9,10 @@ class PathManager:
         self._workspace = workspace
         self._module_map = self._parse_modules()
         self._third_party_map, self._default_third_party_map = self._parse_third_parties()
-
+        
+    def workspace(self):
+        return self._workspace
+        
     def sources_dir(self):
         return path.join(self._workspace, 'sources')
 

@@ -1,3 +1,7 @@
 .vs
 **/**/__pycache__/
-example/
+E/
+/example/project_files/*
+!/example/project_files/CMakeLists.txt
+/example/bin/
+/example/lib/

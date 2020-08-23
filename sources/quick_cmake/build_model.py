@@ -100,6 +100,36 @@ class BuildModel:
         for i in range(len(self._configs)):
             self._parse(self._modules[i])
 
+    def _post_order_traversal(self, modules):
+        result = []
+        if not modules:
+            return result
+        # find roots
+        child_set = set()
+        for k in modules:
+            child_set.update(modules[k].childs)
+        
+        for k in modules:
+            if k in child_set:
+                continue
+            stack = []
+            cur_node = k
+            while cur_node or stack :
+                if cur_node and cur_node not in result:
+                    stack.append(cur_node)
+                    cur_node = utils.set_to_sorted_list(modules[cur_node].childs)[0] if modules[cur_node].childs else None
+                else:
+                    cur_node = stack.pop()
+                    #visit
+                    result.append(cur_node)
+                    if not stack:
+                        break
+                    # get neighbors
+                    neighbors = utils.set_to_sorted_list(modules[stack[-1]].childs)
+                    i = neighbors.index(cur_node)
+                    cur_node = neighbors[i+1] if len(neighbors) > i+1 else None
+        return result
+
     def _module_object_to_module_node(self, build_object):
         module_node = ModuleNode()
         module_node.module_name = build_object.__class__.__name__
@@ -158,32 +188,3 @@ class BuildModel:
             cur_module.dependencies.update(append_ds)
             cur_module.third_parties.update(append_ts)
 
-    def _post_order_traversal(self, modules):
-        result = []
-        if not modules:
-            return result
-        # find roots
-        child_set = set()
-        for k in modules:
-            child_set.update(modules[k].childs)
-        
-        for k in modules:
-            if k in child_set:
-                continue
-            stack = []
-            cur_node = k
-            while cur_node or stack :
-                if cur_node and cur_node not in result:
-                    stack.append(cur_node)
-                    cur_node = utils.set_to_sorted_list(modules[cur_node].childs)[0] if modules[cur_node].childs else None
-                else:
-                    cur_node = stack.pop()
-                    #visit
-                    result.append(cur_node)
-                    if not stack:
-                        break
-                    # get neighbors
-                    neighbors = utils.set_to_sorted_list(modules[stack[-1]].childs)
-                    i = neighbors.index(cur_node)
-                    cur_node = neighbors[i+1] if len(neighbors) > i+1 else None
-        return result
