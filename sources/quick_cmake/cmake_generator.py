@@ -58,16 +58,21 @@ class CMakeGenerator:
         # for each modules
         self._parse_cmake_info()
 
+        glog.info('Generate header')
         content = self._generate_quick_cmake_meta_info()
         content.extend(self._generate_header())
         content.extend(self._generate_project_info())
 
         for module_name in self._get_post_order():
+            glog.info('Generate module ' + module_name)
             content.extend(self._generate_module(self._cmake_modules[module_name]))
         
         # write to file
-        utils.write_text(utils.strings_combine(content, '\n'), 
-                         path.join(self._path_manager.project_files_dir(), 'CMakeLists.txt'))
+        cmake_dist = path.join(self._path_manager.project_files_dir(), 'CMakeLists.txt')
+        glog.info('Write to file:' + cmake_dist)
+        utils.write_text(utils.strings_combine(content, '\n'), cmake_dist)
+
+        self._copy_third_party_binaries()
 
     def exe_cmake(self):
         self._path_manager.project_files_dir()
@@ -75,6 +80,21 @@ class CMakeGenerator:
         print(utils.strings_combine(run_args, ' '))
         returncode = subprocess.run(run_args).returncode
         glog.check_eq(0, returncode)
+
+    def _copy_third_party_binaries(self):
+        # copy binary file of thirdparties to binary dir
+        bins = { 'Debug':list(), 'Release':list() }
+        for third_party in self._cmake_third_parties.values():
+            for i in range(CMakeConfig.CONFIG_LEN):
+                if i == CMakeConfig.GENERAL or i == CMakeConfig.DEBUG:
+                    bins['Debug'].extend(third_party.bins[i])
+                if i == CMakeConfig.GENERAL or i == CMakeConfig.RELEASE:
+                    bins['Release'].extend(third_party.bins[i])
+
+        # check conflict files
+        for config_dir, files in bins.items():
+            if files:
+                utils.copy_files(files, path.join(self._path_manager.binary_dirs(), config_dir))
 
     def _parse_cmake_info(self):
         ''' Parse configs to get cmake modules and third parties '''
@@ -123,7 +143,7 @@ class CMakeGenerator:
                                                                               third_party.bin_dirs, 
                                                                               third_party.bins, 
                                                                               self._path_manager.workspace()))
-
+        
     def _parse_cmake_module(self, config, modules):
         config_index = self._get_configuration_index(config)
         for module in modules.values():
@@ -168,6 +188,7 @@ class CMakeGenerator:
         headers.append('set(CMAKE_SUPPRESS_REGENERATION true)')
         headers.append('set(CMAKE_CONFIGURATION_TYPES \"{}\" CACHE STRING \"\" FORCE)'.format(self._get_configurations()))
         headers.append('set(CMAKE_GENERATOR_PLATFORM \"{}\" CACHE INTERNAL \"\" FORCE)'.format(self._get_generator_platform()))
+        headers.append('set(CMAKE_CXX_STANDARD {})'.format(self._configs[0].std))
         headers.append('\n')
         return headers
 

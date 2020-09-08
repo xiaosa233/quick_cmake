@@ -147,7 +147,8 @@ class BuildModel:
         info = ThirdPartyInfo()
         info.third_party_name = build_object.__class__.__name__
         info.include_dirs = getattr(build_object, 'include_dirs', [])
-        info.bin_dirs = getattr(build_object, 'include_dirs', [])
+        info.bin_dirs = getattr(build_object, 'bin_dirs', [])
+        info.lib_dirs = getattr(build_object, 'lib_dirs', [])
         info.libs = getattr(build_object, 'libs', [])
         info.bins = getattr(build_object, 'bins', [])
         return info

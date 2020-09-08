@@ -16,6 +16,7 @@ def _parse_member(value, str):
 @click.command()
 @click.option('--configuration', default='DEBUG,RELEASE', help='values can be:DEBUG,RELEASE')
 @click.option('--platform', default='X64', help='values can one of:WIN32,X64,ARM,ARM64')
+@click.option('--std', default='c++11', help='set std version')
 @click.option('--workspace', default='.', help='Workspace dir')
 @click.option('--only_generate', is_flag=True, help='Only generate CMakeListst.txt, but not execute cmake to update')
 
@@ -23,7 +24,7 @@ def _parse_member(value, str):
 @click.option('--pre_build', is_flag=True, help='trigger pre build event')
 @click.option('--post_build', is_flag=True, help='trigger post build event')
 @click.option('--module', help='The module to trigger pre/post build event')
-def main(configuration, platform, workspace, only_generate, pre_build, post_build, module):
+def main(configuration, platform, std, workspace, only_generate, pre_build, post_build, module):
     v_configurations = configuration.split(',')
     v_platforms = platform.split(',')
 
@@ -35,6 +36,8 @@ def main(configuration, platform, workspace, only_generate, pre_build, post_buil
             v_config = config.Config()
             v_config.configuration = tmp_configuration
             v_config.platform = _parse_member(config.Platform(), v_platform)
+            glog.check_eq(std[0:3],'c++')
+            v_config.std=int(std[3:])
             configs.append(v_config)
 
     # create path manager instance

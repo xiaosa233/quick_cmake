@@ -1,8 +1,9 @@
 
-import copy
 import glob
+import glog
 import os
 from os import path
+import shutil
 
 def set_to_sorted_list(value):
     result = list(value)
@@ -65,3 +66,13 @@ def split_path(path_value):
         p = path.dirname(p)
     result.reverse()
     return result
+
+def copy_files(files, dist_dir, is_overwrite=False):
+    # make dir
+    if not path.exists(dist_dir):
+        os.makedirs(dist_dir)
+    for file in files:
+        new_dist = path.join(dist_dir, path.basename(file))
+        if is_overwrite or not path.exists(new_dist):
+            glog.info('Copy file {} --> {}'.format(file, new_dist))
+            shutil.copyfile(file, new_dist)
