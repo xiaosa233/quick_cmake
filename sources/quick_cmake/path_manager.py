@@ -28,6 +28,9 @@ class PathManager:
     def binary_dirs(self):
         return path.join(self._workspace, 'bin')
 
+    def library_dirs(self):
+        return path.join(self._workspace, 'lib')
+
     @property
     def module_map(self):
         return self._module_map

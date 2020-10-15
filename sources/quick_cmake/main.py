@@ -5,6 +5,7 @@ import glog
 from build_model import BuildModel
 from cmake_generator import CMakeGenerator
 import config
+from gconfig import GConfig
 from path_manager import PathManager
 
 def _parse_member(value, str):
@@ -17,14 +18,22 @@ def _parse_member(value, str):
 @click.option('--configuration', default='DEBUG,RELEASE', help='values can be:DEBUG,RELEASE')
 @click.option('--platform', default='X64', help='values can one of:WIN32,X64,ARM,ARM64')
 @click.option('--std', default='c++11', help='set std version')
+@click.option('--disable_unittest', is_flag=True, help='Disable Unittest for project')
 @click.option('--workspace', default='.', help='Workspace dir')
 @click.option('--only_generate', is_flag=True, help='Only generate CMakeListst.txt, but not execute cmake to update')
+@click.option('--only_dependency_lib_exists', is_flag=True, help='Only link dependency libarary if it is exists')
 
 # for pre/post build event trigger
 @click.option('--pre_build', is_flag=True, help='trigger pre build event')
 @click.option('--post_build', is_flag=True, help='trigger post build event')
 @click.option('--module', help='The module to trigger pre/post build event')
-def main(configuration, platform, std, workspace, only_generate, pre_build, post_build, module):
+def main(configuration, platform, std, disable_unittest, workspace, only_generate, only_dependency_lib_exists, 
+         pre_build, post_build, module):
+    glog.check_eq(std[0:3],'c++')
+    GConfig.STD = int(std[3:])
+    GConfig.ENABLE_UNITTEST = not disable_unittest
+    GConfig.ONLY_DEPENDENCY_LIB_EXISTS = only_dependency_lib_exists
+
     v_configurations = configuration.split(',')
     v_platforms = platform.split(',')
 
@@ -36,8 +45,6 @@ def main(configuration, platform, std, workspace, only_generate, pre_build, post
             v_config = config.Config()
             v_config.configuration = tmp_configuration
             v_config.platform = _parse_member(config.Platform(), v_platform)
-            glog.check_eq(std[0:3],'c++')
-            v_config.std=int(std[3:])
             configs.append(v_config)
 
     # create path manager instance

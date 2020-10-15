@@ -32,9 +32,6 @@ class Config:
         # TODO(xiaojianli):Change default value of platform relative to the sytem
         self.platform = self.Platform.X64
 
-        # unvisible for user
-        self.std = 11
-
     def _predeine_values(self):
         self.Configuration = Configuration()
         self.System = System()

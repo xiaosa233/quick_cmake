@@ -5,3 +5,4 @@ E/
 !/example/project_files/CMakeLists.txt
 /example/bin/
 /example/lib/
+/build

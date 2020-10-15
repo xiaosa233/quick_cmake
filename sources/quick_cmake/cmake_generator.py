@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import config
+from gconfig import GConfig
 import utils
 
 class CMakeConfig:
@@ -153,7 +154,7 @@ class CMakeGenerator:
                 cmake_module.name = module.module_name
                 cmake_module.output = module.output
                 cmake_module.include_dirs = self._get_module_include_dirs(module, self._cmake_third_parties)
-                cmake_module.libs[config_index] = set(module.dependencies)
+                cmake_module.libs[config_index] = self._get_module_dependency_libs(module.dependencies)
                 for third_party in module.third_parties:
                     glog.check(third_party in self._cmake_third_parties, 
                                 'third party {} is not in cmake third parties'.format(third_party))
@@ -169,11 +170,30 @@ class CMakeGenerator:
                 # append include dirs
                 cmake_module.include_dirs.update(self._get_module_include_dirs(module, self._cmake_third_parties))
                 # for dependencies, we can use the library target name
-                cmake_module.libs[config_index].update(module.dependencies)
+                cmake_module.libs[config_index].update(self._get_module_dependency_libs(module.dependencies))
                 for third_party in module.third_parties:
                     for lib_file in self._cmake_third_parties[third_party].libs[config_index]:
                         if lib_file not in cmake_module.libs[config_index]:
                             cmake_module.libs[config_index].add(lib_file)
+
+    def _get_module_dependency_libs(self, dependencies):
+        ''' Return dependencies of module
+            If GConfig.ONLY_DEPENDENCY_LIB_EXISTS is true, we need to check if file is exists
+            depencies is list
+            Return set
+        '''
+        if GConfig.ONLY_DEPENDENCY_LIB_EXISTS:
+            result = set()
+            check_dirs = [path.join(self._path_manager.library_dirs(), 'Debug'), path.join(self._path_manager.library_dirs(), 'Release')]
+            for dependency in dependencies:
+                for check_dir in check_dirs:
+                    file_path = path.join(check_dir, dependency + GConfig.LIB_EXTENSION)
+                    if path.exists(file_path):
+                        result.add(dependency)
+                        break
+            return result
+        else:
+            return set(dependencies)
 
     def _get_configuration_index(self, config):
         if config.configuration == config.Configuration.DEBUG:
@@ -188,7 +208,7 @@ class CMakeGenerator:
         headers.append('set(CMAKE_SUPPRESS_REGENERATION true)')
         headers.append('set(CMAKE_CONFIGURATION_TYPES \"{}\" CACHE STRING \"\" FORCE)'.format(self._get_configurations()))
         headers.append('set(CMAKE_GENERATOR_PLATFORM \"{}\" CACHE INTERNAL \"\" FORCE)'.format(self._get_generator_platform()))
-        headers.append('set(CMAKE_CXX_STANDARD {})'.format(self._configs[0].std))
+        headers.append('set(CMAKE_CXX_STANDARD {})'.format(GConfig.STD))
         headers.append('\n')
         return headers
 
@@ -216,11 +236,14 @@ class CMakeGenerator:
         file_globs = {}
         source_groups = {}
         module_dir = path.join(self._path_manager.sources_dir(), module.name)
+        unittest_sources = []
         for subdir, dirs, files in os.walk(path.join(self._path_manager.sources_dir(), module.name)):
             file_results = []
-            for extension in ['*.h', '*.hpp', '*.inl', '.hh', 
-                              '*.cc', '*.cpp', '*.c', '*.cxx', '*.cp', '*.c++']:
-                file_results.extend([path.relpath(f, module_dir) for f in glob.glob(path.join(subdir, extension))])
+            for extension in GConfig.SOURCES_FILTER:
+                for file in [path.relpath(f, module_dir) for f in glob.glob(path.join(subdir, extension))]:
+                    # remove end with _test files
+                    if not path.splitext(file)[0].endswith('_test'):
+                        file_results.append(file)
             key = utils.strings_combine(utils.split_path(path.relpath(subdir, self._path_manager.sources_dir())), '_')
             if file_results:
                 file_globs[key] = file_results
@@ -229,6 +252,11 @@ class CMakeGenerator:
                     source_groups[key] = path.join('sources', relpath).replace('\\','\\\\')
                 else:
                     source_groups[key] = 'sources'
+
+            # For unittest
+            if GConfig.ENABLE_UNITTEST:
+                for extension in GConfig.UNITTEST_SOURCES_FILTTER:
+                    unittest_sources.extend([path.relpath(f, module_dir) for f in glob.glob(path.join(subdir, extension))])
 
         # write file glob and sources group
         for key, value in file_globs.items():
@@ -250,21 +278,27 @@ class CMakeGenerator:
             glog.fatal('Unknown output type for module {} : {}', module.name, module.output)
 
         # add target include dirs
-        content.append('target_include_directories({} PRIVATE ${{SOURCE_DIR}}/{})'.format(module.name, module.name))
+        target_include_part = ['PRIVATE ${{SOURCE_DIR}}/{}'.format(module.name)]
         if module.include_dirs:
-            include_dirs = ['${PROJECT_DIR}/' + x.replace('\\', '/') for x in module.include_dirs ]
-            content.append('target_include_directories({} PUBLIC {})'.format(module.name, utils.strings_combine(include_dirs, ' ')))
+            target_include_part.append('\n')
+            target_include_part.extend([ 'PUBLIC ${PROJECT_DIR}/' + include_dir.replace('\\', '/') for include_dir in module.include_dirs])
+        content.append('target_include_directories({} {})'.format(module.name, utils.strings_combine(target_include_part, ' ')))
 
         # add target link libs
+        target_link_value_part = []
         for i in range(CMakeConfig.CONFIG_LEN):
             libs = []
             for x in module.libs[i]:
+                # if x is not a path, means that it is a target.
                 if '.' in x:
                     libs.append('${PROJECT_DIR}/' + x.replace('\\','/'))
                 else:
                     libs.append(x)
             if libs:
-                content.append('target_link_libraries({} {} {})'.format(module.name, CMakeConfig.LINK_LIB_MAP[i], utils.strings_combine(libs, ' ')))
+                if target_link_value_part:
+                    target_link_value_part.append('\n')
+                target_link_value_part.extend( [ CMakeConfig.LINK_LIB_MAP[i] + ' ' + lib for lib in libs])
+        content.append('target_link_libraries({} {})'.format(module.name, utils.strings_combine(target_link_value_part, ' ')))
 
         # add pre/post build
         custom_cmd = self._convert_custom_command(sys.argv) + ' --module='+module.name
@@ -276,6 +310,55 @@ class CMakeGenerator:
             content.append('add_custom_command(TARGET {} POST_BUILD COMMAND {})'.format(module.name, post_build_cmd))
         
         content.append('set_target_properties({} PROPERTIES LINKER_LANGUAGE CXX)'.format(module.name))
+        content.append('\n')
+
+        if GConfig.ENABLE_UNITTEST and unittest_sources:
+            content.extend(self._generate_unittest(unittest_sources, module.name))
+        return content
+
+    def _generate_unittest(self, unittest_sources, module_name):
+        # Append unit test
+        UNITTEST_THIRD_PARTY = 'googletest'
+        glog.check(unittest_sources)
+        sources_files = [ path.join('${SOURCE_DIR}', module_name, v).replace('\\','/') for v in unittest_sources ]
+        unittest_sources_part = utils.strings_combine(sources_files, ' ')
+        unittest_name = 'test_' + module_name
+
+        include_dirs = set()
+        # google test include dirs
+        for include_dir in self._cmake_third_parties[UNITTEST_THIRD_PARTY].include_dirs:
+            if not path.isabs(include_dir):
+                include_dirs.add(path.relpath(path.join(self._path_manager.third_parties_dir(), UNITTEST_THIRD_PARTY, include_dir), 
+                                    self._path_manager.workspace()))
+            else:
+                include_dirs.add(include_dir)
+        include_dirs = [ path.join('${PROJECT_DIR}', x).replace('\\', '/') for x in include_dirs ]
+        include_dirs.append('${SOURCE_DIR}/' + module_name)
+
+        # add target link libs
+        libs = [ [] for i in range(CMakeConfig.CONFIG_LEN) ]
+        libs[CMakeConfig.GENERAL].append(module_name)
+        for i in range(CMakeConfig.CONFIG_LEN):
+            now_libs = libs[i]
+            for x in self._cmake_third_parties[UNITTEST_THIRD_PARTY].libs[i]:
+                if '.' in x:
+                    now_libs.append('${PROJECT_DIR}/' + x.replace('\\','/'))
+                else:
+                    now_libs.append(x)
+        
+        content = []
+        content.append('# unittest module {}'.format(unittest_name))
+        content.append('add_executable({} {})'.format(unittest_name, unittest_sources_part))
+        content.append('target_include_directories({} PRIVATE {})'.format(unittest_name, utils.strings_combine(include_dirs, ' ')))
+        target_link_value_part = []
+        for i in range(CMakeConfig.CONFIG_LEN):
+            now_libs = libs[i]
+            if now_libs:
+                if target_link_value_part:
+                    target_link_value_part.append('\n')
+                target_link_value_part.extend([CMakeConfig.LINK_LIB_MAP[i] + ' ' + lib for lib in now_libs])
+        content.append('target_link_libraries({} {})'.format(unittest_name, utils.strings_combine(target_link_value_part, ' ')))
+        content.append('set_target_properties({} PROPERTIES LINKER_LANGUAGE CXX)'.format(unittest_name))
         content.append('\n')
         return content
 
