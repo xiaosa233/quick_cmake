@@ -1,0 +1,10 @@
+.vs
+**/**/__pycache__/
+E/
+/example/project_files/*
+/example/bin/
+/example/lib/
+/build
+/sources/quick_cmake/test/project_files/*
+/sources/quick_cmake/test/bin/*
+*.pyc
