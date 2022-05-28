@@ -435,12 +435,13 @@ class CMakeGenerator:
 
         # add target link libs
         target_link_value_part = []
-        for i in range(CMakeConfig.CONFIG_LEN):
+        for i in reversed(range(CMakeConfig.CONFIG_LEN)):
             link_part = ''
             for lib_sets in [ target_info.libs, target_info.system_libs]:
                 if not lib_sets[i]:
                     continue
                 link_part += utils.containers_format(lib_sets[i], ' ' + CMakeConfig.LINK_LIB_MAP[i] + ' {}\n')
+                print('debug link part is ', target_info.libs)
             if link_part == '':
                 continue
             target_link_value_part.append(link_part)
