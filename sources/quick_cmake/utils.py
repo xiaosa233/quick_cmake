@@ -37,7 +37,7 @@ def match_files(workspace, dirs, files, relative_dir = ''):
         
         for file in files:
             file_list = glob.glob(path.join(check_dir, file))
-            if relative_dir:
+            if not path.isabs(dir) and relative_dir:
                 file_list = [ path.relpath(f, relative_dir) for f in file_list ]
             result.update(set(file_list))
     return result

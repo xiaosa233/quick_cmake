@@ -181,7 +181,9 @@ class CMakeGenerator:
                                             third_party.libs, 
                                             self._path_manager.workspace())
 
-            third_libs = ['${PROJECT_DIR}/' + x.replace('\\','/') for x in third_libs ]
+            third_libs = ['${PROJECT_DIR}/' + x.replace('\\','/') \
+                if not path.isabs(x) else x.replace('\\','/') \
+                for x in third_libs ]
             cmake_third_party.libs[config_index].update(third_libs)
             cmake_third_party.system_libs[config_index].update(third_party.system_libs)
             cmake_third_party.bins[config_index].update(utils.match_files(third_party_workspace, 
@@ -330,7 +332,8 @@ class CMakeGenerator:
 
     def _generate_compile_options(self):
         if not GConfig.COMPILE_OPTIONS is None and GConfig.COMPILE_OPTIONS != '':
-            return ['add_compile_options({})'.format(GConfig.COMPILE_OPTIONS)]
+            options_vec = GConfig.COMPILE_OPTIONS.split(',')
+            return ['add_compile_options({})'.format(' '.join(options_vec))]
         return []
 
     def _generate_quick_cmake_meta_info(self):
@@ -354,7 +357,9 @@ class CMakeGenerator:
         module_target.sources_infos = module.sources_infos
         module_target.libs = module.libs
         module_target.system_libs = module.system_libs
-        module_target.include_dirs = set(['${PROJECT_DIR}/' + include_dir.replace('\\', '/') for include_dir in module.include_dirs])
+        module_target.include_dirs = set(['${PROJECT_DIR}/' + include_dir.replace('\\', '/')    \
+                if not path.isabs(include_dir) else include_dir.replace('\\', '/') \
+                for include_dir in module.include_dirs])
         module_target.include_dirs.add(path.join(CMAKE_SOURCES_DIR, module.name).replace('\\', '/'))
         module_target.has_pre_build = module.has_pre_build
         module_target.has_post_build = module.has_post_build
