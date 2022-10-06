@@ -39,6 +39,7 @@ class CMakeTarget:
                  config.Output().STATIC_LIB : STATIC_LIBRARY,
                  config.Output().DYNAMIC_LIB : SHARED_LIBRARY}
 
+# Record intermediate results. From cmake module to target info.
 class TargetInfo:
     def __init__(self):
         self.name = ''
@@ -46,6 +47,7 @@ class TargetInfo:
         self.file_group_infos = {} # key -- > sources files
         self.sources_infos = {} # sources_filter --> [file_groups]
         self.include_dirs = set()
+        self.third_party_libs = [ set() for i in range(CMakeConfig.CONFIG_LEN) ]
         self.libs = [set() for i in range(CMakeConfig.CONFIG_LEN) ]
         self.system_libs = [ set() for i in range(CMakeConfig.CONFIG_LEN) ]
         self.has_pre_build = False
@@ -58,6 +60,7 @@ class CMakeModule:
         self.name = ''
         self.output = 0
         self.main_file = ''
+        self.third_party_libs = [ set() for i in range(CMakeConfig.CONFIG_LEN) ]
         self.include_dirs = set()
         self.libs = [set() for i in range(CMakeConfig.CONFIG_LEN) ]
         self.system_libs = [ set() for i in range(CMakeConfig.CONFIG_LEN) ]
@@ -204,6 +207,7 @@ class CMakeGenerator:
                 cmake_module.main_file = module.main_file
                 cmake_module.include_dirs = set()
                 cmake_module.libs[config_index] = set()
+                cmake_module.third_party_libs[config_index] = set()
                 cmake_module.system_libs[config_index] = set()
                 cmake_module.has_pre_build = module.pre_build != None
                 cmake_module.has_post_build = module.post_build != None 
@@ -223,7 +227,7 @@ class CMakeGenerator:
             for third_party in module.third_parties:
                 glog.check(third_party in self._cmake_third_parties, 
                             'third party {} is not in cmake third parties'.format(third_party))
-                cmake_module.libs[config_index].update(self._cmake_third_parties[third_party].libs[config_index])
+                cmake_module.third_party_libs[config_index].update(self._cmake_third_parties[third_party].libs[config_index])
                 cmake_module.system_libs[config_index].update(self._cmake_third_parties[third_party].system_libs[config_index])
 
     def _get_file_info_dir_key(self, sub_dir, module_name):
@@ -355,6 +359,7 @@ class CMakeGenerator:
         module_target.output = CMakeTarget.ConfigMap[module.output]
         module_target.file_group_infos = module.file_group_infos
         module_target.sources_infos = module.sources_infos
+        module_target.third_party_libs = module.third_party_libs
         module_target.libs = module.libs
         module_target.system_libs = module.system_libs
         module_target.include_dirs = set(['${PROJECT_DIR}/' + include_dir.replace('\\', '/')    \
@@ -442,7 +447,7 @@ class CMakeGenerator:
         target_link_value_part = []
         for i in reversed(range(CMakeConfig.CONFIG_LEN)):
             link_part = ''
-            for lib_sets in [ target_info.libs, target_info.system_libs]:
+            for lib_sets in [ target_info.libs, target_info.third_party_libs, target_info.system_libs]:
                 if not lib_sets[i]:
                     continue
                 link_part += utils.containers_format(lib_sets[i], ' ' + CMakeConfig.LINK_LIB_MAP[i] + ' {}\n')
