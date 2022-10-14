@@ -34,5 +34,12 @@ class UtilsTest(unittest.TestCase):
         result = utils.containers_format(['12', '234'], '{} ')
         self.assertEqual('12 234 ', result)
 
+    def test_parse_flags(self):
+        result = utils.parse_flags('--enable_widget,--next_value=3.0')
+        self.assertDictEqual(
+            {'enable_widget':True,
+            'next_value':'3.0'},
+            result)
+
 if __name__ == '__main__':
     unittest.main()

@@ -25,13 +25,15 @@ def _run_unittests(unittests):
 @click.option('--configuration', default='DEBUG,RELEASE', help='values can be:DEBUG,RELEASE')
 @click.option('--platform', default='X64', help='values can one of:WIN32,X64,ARM,ARM64')
 @click.option('--std', default='c++11', help='set std version')
+@click.option('--output_dir', default='project_files', help='output dir for build files')
 @click.option('--disable_unittest', is_flag=True, help='Disable Unittest for project')
 @click.option('--workspace', default='.', help='Workspace dir')
 @click.option('--only_generate', is_flag=True, help='Only generate CMakeListst.txt, but not execute cmake to update')
 @click.option('--compile_options', default='', help='Add compile options, use `add_compile_options` in cmake.')
+@click.option('--compile_definitions', default='', help='Add compile definitions, use `add_compile_difinitions` in cmake.')
 
 # todo: support custom flags in the quick cmake
-@click.option('--custom_flags', help='custom_flags, access by config.custom_flags_str and config.custom_flags (dict)')
+@click.option('--custom_flags', default='', help='custom_flags, access by config.custom_flags_str and config.custom_flags (dict)')
 
 # for pre/post build event trigger
 @click.option('--pre_build', is_flag=True, help='trigger pre build event')
@@ -40,8 +42,8 @@ def _run_unittests(unittests):
 
 # for run all unittests
 @click.option('--unittests', default='', help='unittest binaries:xx,xxxx,xx')
-def main(configuration, platform, std, disable_unittest, workspace, only_generate, 
-         compile_options,custom_flags,
+def main(configuration, platform, std, output_dir, disable_unittest, workspace, only_generate, 
+         compile_options, compile_definitions, custom_flags,
 
          pre_build, post_build, module, unittests):
     if unittests != '':
@@ -49,8 +51,10 @@ def main(configuration, platform, std, disable_unittest, workspace, only_generat
 
     glog.check_eq(std[0:3],'c++')
     GConfig.STD = int(std[3:])
+    GConfig.OUTPUT_DIR = output_dir
     GConfig.ENABLE_UNITTEST = not disable_unittest
     GConfig.COMPILE_OPTIONS=compile_options
+    GConfig.COMPILE_DEFINITIONS = compile_definitions
     GConfig.CUSTOM_FLAGS = custom_flags
 
     v_configurations = configuration.split(',')
@@ -64,6 +68,7 @@ def main(configuration, platform, std, disable_unittest, workspace, only_generat
             v_config = config.Config()
             v_config.configuration = tmp_configuration
             v_config.platform = _parse_member(config.Platform(), v_platform)
+            v_config.set_custom_flags(GConfig.CUSTOM_FLAGS)
             configs.append(v_config)
 
     # create path manager instance

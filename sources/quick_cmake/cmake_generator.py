@@ -107,6 +107,7 @@ class CMakeGenerator:
         content.extend(self._generate_header())
         content.extend(self._generate_project_info())
         content.extend(self._generate_compile_options())
+        content.extend(self._generate_compile_definitions())
 
         for module_name in self.cached_post_order:
             glog.info('Generate module ' + module_name)
@@ -267,6 +268,7 @@ class CMakeGenerator:
                     # remove end with _test files
                     if not path.splitext(file)[0].endswith('_test'):
                         file_results.append(file)
+                        print(file)
             key = self._get_file_info_dir_key(path.relpath(subdir, module_dir), cmake_module.name)
             if file_results:
                 cmake_module.file_group_infos[key] = file_results
@@ -338,6 +340,12 @@ class CMakeGenerator:
         if not GConfig.COMPILE_OPTIONS is None and GConfig.COMPILE_OPTIONS != '':
             options_vec = GConfig.COMPILE_OPTIONS.split(',')
             return ['add_compile_options({})'.format(' '.join(options_vec))]
+        return []
+
+    def _generate_compile_definitions(self):
+        if not GConfig.COMPILE_DEFINITIONS is None and GConfig.COMPILE_DEFINITIONS != '':
+            options_vec = GConfig.COMPILE_DEFINITIONS.split(',')
+            return ['add_compile_definitions({})'.format(' '.join(options_vec))]
         return []
 
     def _generate_quick_cmake_meta_info(self):

@@ -1,6 +1,8 @@
 import platform
 import glog
 
+import utils
+
 class Configuration:
     def __init__(self):
         self.DEBUG = 1
@@ -28,10 +30,16 @@ class Output:
 class Config:
     def __init__(self):
         self._predeine_values()
+        self.custom_flags_str = ''
+        self.custom_flags = dict()
         self.configuration = self.Configuration.RELEASE
         self.system = self._get_system()
         # TODO(xiaojianli):Change default value of platform relative to the sytem
         self.platform = self.Platform.X64
+
+    def set_custom_flags(self, flags_str):
+        self.custom_flags_str = flags_str
+        self.custom_flags = utils.parse_flags(flags_str)
 
     def _predeine_values(self):
         self.Configuration = Configuration()

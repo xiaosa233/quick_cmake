@@ -70,3 +70,22 @@ def containers_format(containers, format_str):
     for it in containers:
         format_result += format_str.format(it)
     return format_result
+
+def parse_flags(flags_str):
+    flags_arr = flags_str.split(',')
+    res = dict()
+    for flag in flags_arr:
+        if flag == '':
+            continue
+        if not flag.startswith('--'):
+            raise ValueError('Flags must start with --:' + flag)
+        find_index = flag.find('=', 2)
+        key = ''
+        value = True
+        if find_index == -1:
+            key = flag[2:]
+        else:
+            key = flag[2:find_index]
+            value = flag[find_index+1:]
+        res[key] = value
+    return res

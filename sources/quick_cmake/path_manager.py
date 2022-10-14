@@ -3,6 +3,8 @@ import glog
 import os
 from os import path
 
+from gconfig import GConfig
+
 
 class PathManager:
     def __init__(self, workspace):
@@ -23,7 +25,7 @@ class PathManager:
         return path.basename(path.abspath(self._workspace))
     
     def project_files_dir(self):
-        return path.join(self._workspace, 'project_files')
+        return path.join(self._workspace, GConfig.OUTPUT_DIR)
 
     def binary_dirs(self):
         return path.join(self._workspace, 'bin')

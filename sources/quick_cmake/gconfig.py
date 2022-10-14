@@ -26,4 +26,8 @@ class GConfig:
     
     COMPILE_OPTIONS = ''
 
+    COMPILE_DEFINITIONS = ''
+
     CUSTOM_FLAGS = ''
+
+    OUTPUT_DIR = ''
